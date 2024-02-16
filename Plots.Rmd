@@ -1,0 +1,40 @@
+---
+title: "Data visualization"
+author: "Ben Wöltgens"
+date: "2024-02-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(spotifyr)
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+Clipping <- get_artist_audio_features('5HJ2kX5UTwN4Ns8fB5Rn1I')
+Jpegmafia <- get_artist_audio_features('6yJ6QQ3Y5l0s0tn7b0arrO')
+Death_Grips <- get_artist_audio_features('5RADpgYLOuS2ZxDq7ggYYH')
+
+```
+
+
+```{r}
+data = rbind(Clipping, Jpegmafia, Death_Grips)
+ggplot(data, aes(x=energy, y=loudness, color = artist_name)) + 
+geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by Loudness and Energy")
+```
+```{r}
+ggplot(data, aes(x=danceability, y=tempo, color = artist_name)) + 
+geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by tempo and danceability")
+```
+
+
