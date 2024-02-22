@@ -33,29 +33,29 @@ Artists I wish to analyze for this portfolio include the following:
 
 1980’s: Mark Stewart, Bill Laswell, and Adrian Sherwood. These artists appear to have set the roots for industrial hip-hop, and so analyzing these songs I believe will reveal more about the forming of the genre itself.
 
-### First visualizations
+### First visualization
 
 ```{r echo=FALSE}
 data = rbind(Clipping, Jpegmafia, Death_Grips)
 ggplot(data, aes(x=energy, y=loudness, color = artist_name)) + 
-geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by Loudness and Energy")
+geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by Loudness and Energy") + theme(plot.title = element_text(size = 10)) + labs(x = "Energy", y="Loudness", color = "Artists")
 ```
 
 ------------------------------------------------------------------------
 
-The current plots show the relations between loudness/energy and tempo/dance. The current goal of these plots is to find what common elements these artists within the genre tend to share and which elements vastly differ. The hope is then to get a better understanding of what makes a hip-hop song industrial. From there we can start comparing songs of the genre with other genres which may or may not have inspired it and see the evolution of song elements.
+The current visualization show the relations between loudness and energy. This plot shows a clear correlation between loudness and energy among these artist, namely the louder the songs, the more energetic they are. With this and further visualizations I hope to get a better understanding of what makes a hip-hop song industrial.
 
 ### Second visualization
 
 ```{r echo=FALSE}
 ggplot(data, aes(x=danceability, y=tempo, color = artist_name)) + 
-geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by tempo and danceability")
+geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by tempo and danceability") + theme(plot.title = element_text(size = 10)) + labs(x = "Danceability", y="Tempo", color = "Artists")
 ```
 
 ------------------------------------------------------------------------
 
-The current plots show the relations between loudness/energy and tempo/dance. The current goal of these plots is to find what common elements these artists within the genre tend to share and which elements vastly differ. The hope is then to get a better understanding of what makes a hip-hop song industrial. From there we can start comparing songs of the genre with other genres which may or may not have inspired it and see the evolution of song elements.
+The current visualization show the relations between tempo and danceability. As mentioned in the previous section, the current goal of these plots is to find what common elements these artists within the genre tend to share and which elements vastly differ. The hope is then to get a better understanding of what makes a hip-hop song industrial. From there we can then start comparing songs of the genre with other genres which may or may not have inspired it and see the evolution of song elements.
 
 ### Conclusion/discussion
 
-To be asse
+To be assessed
