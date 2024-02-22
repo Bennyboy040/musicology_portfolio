@@ -1,5 +1,5 @@
 ---
-title: "Portfolio"
+title: "Portfolio Computational Musicology Ben Wöltgens"
 output: 
   flexdashboard::flex_dashboard:
     storyboard: true
@@ -33,13 +33,19 @@ Artists I wish to analyze for this portfolio include the following:
 
 1980’s: Mark Stewart, Bill Laswell, and Adrian Sherwood. These artists appear to have set the roots for industrial hip-hop, and so analyzing these songs I believe will reveal more about the forming of the genre itself.
 
-### Current Plots
+### First visualizations
 
 ```{r echo=FALSE}
 data = rbind(Clipping, Jpegmafia, Death_Grips)
 ggplot(data, aes(x=energy, y=loudness, color = artist_name)) + 
 geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by Loudness and Energy")
 ```
+
+------------------------------------------------------------------------
+
+The current plots show the relations between loudness/energy and tempo/dance. The current goal of these plots is to find what common elements these artists within the genre tend to share and which elements vastly differ. The hope is then to get a better understanding of what makes a hip-hop song industrial. From there we can start comparing songs of the genre with other genres which may or may not have inspired it and see the evolution of song elements.
+
+### Second visualization
 
 ```{r echo=FALSE}
 ggplot(data, aes(x=danceability, y=tempo, color = artist_name)) + 
@@ -51,3 +57,5 @@ geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by te
 The current plots show the relations between loudness/energy and tempo/dance. The current goal of these plots is to find what common elements these artists within the genre tend to share and which elements vastly differ. The hope is then to get a better understanding of what makes a hip-hop song industrial. From there we can start comparing songs of the genre with other genres which may or may not have inspired it and see the evolution of song elements.
 
 ### Conclusion/discussion
+
+To be asse
