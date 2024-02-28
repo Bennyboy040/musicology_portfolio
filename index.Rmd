@@ -1,8 +1,27 @@
 ---
-title: "Portfolio Computational Musicology Ben Wöltgens"
+title: "Portfolio Computational Musicology"
+author: "Ben Wöltgens"
+date: "March 2024"
 output: 
   flexdashboard::flex_dashboard:
     storyboard: true
+    theme:
+      heading_font:
+        google: 
+          family: Rajdhani
+          wght: 700
+      base_font:
+        google: Fira Sans
+      code_font:
+        google: Fira Mono
+      bg: "#FFFFFF"
+      fg: "#212529" 
+      primary: "#0d114a"
+      secondary: "#39d7b8"
+      success: "#39d7b8"
+      danger: "#fa5577"
+      warning: "#ffb14c"
+      info: "#0cc7f1"
 ---
 
 ```{r setup, include=FALSE}
@@ -48,13 +67,58 @@ The current visualization show the relations between loudness and energy. This p
 ### Second visualization
 
 ```{r echo=FALSE}
-ggplot(data, aes(x=danceability, y=tempo, color = artist_name)) + 
-geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by tempo and danceability") + theme(plot.title = element_text(size = 10)) + labs(x = "Danceability", y="Tempo", color = "Artists")
+ggplot(data, aes(x=energy, y=valence, color = artist_name)) + 
+geom_point() + ggtitle("Current industrial hip-hop artists' songs measured by Valence and Energy") + theme(plot.title = element_text(size = 10)) + labs(x = "Energy", y="Valence", color = "Artists")
 ```
 
 ------------------------------------------------------------------------
 
 The current visualization show the relations between tempo and danceability. As mentioned in the previous section, the current goal of these plots is to find what common elements these artists within the genre tend to share and which elements vastly differ. The hope is then to get a better understanding of what makes a hip-hop song industrial. From there we can then start comparing songs of the genre with other genres which may or may not have inspired it and see the evolution of song elements.
+
+### Plot
+
+```{r}
+bzt <-
+  get_tidy_audio_analysis("5ZLkc5RY1NM4FtGWEd6HOE") |> # Change URI.
+  compmus_align(bars, segments) |>                     # Change `bars`
+  select(bars) |>                                      #   in all three
+  unnest(bars) |>                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
+```
+
+```{r}
+bzt |>
+  compmus_gather_timbre() |>
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+```
+
+------------------------------------------------------------------------
+
+Add text and replace the figure with actual industrial song/songs
 
 ### Conclusion/discussion
 
