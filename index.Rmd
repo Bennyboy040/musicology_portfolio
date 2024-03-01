@@ -77,7 +77,7 @@ The current visualization show the relations between tempo and danceability. As 
 
 ### Plot
 
-```{r}
+```{r echo=FALSE}
 bzt <-
   get_tidy_audio_analysis("7nCONy10IHp7XD3oYZ0lcx") |> # Change URI.
   compmus_align(bars, segments) |>                     # Change `bars`
@@ -99,7 +99,7 @@ bzt <-
   )
 ```
 
-```{r}
+```{r echo=FALSE}
 bzt |>
   compmus_gather_timbre() |>
   ggplot(
@@ -124,7 +124,7 @@ Track: I've seen footage, Death Grips. Text still needs to be added
 
 ### Matrix
 
-```{r}
+```{r echo=FALSE}
 bzt |>
   compmus_self_similarity(timbre, "cosine") |> 
   ggplot(
