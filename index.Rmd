@@ -27,6 +27,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(tidymodels)
 library(knitr)
 library(ggplot2)
 library(flexdashboard)
@@ -34,6 +35,25 @@ library(compmus)
 library(spotifyr)
 library(cowplot)
 library(plotly)
+library(ggdendro)
+library(heatmaply)
+library(ranger)
+
+get_conf_mat <- function(fit) {
+  outcome <- .get_tune_outcome_names(fit)
+  fit |> 
+    collect_predictions() |> 
+    conf_mat(truth = outcome, estimate = .pred_class)
+}  
+
+get_pr <- function(fit) {
+  fit |> 
+    conf_mat_resampled() |> 
+    group_by(Prediction) |> mutate(precision = Freq / sum(Freq)) |> 
+    group_by(Truth) |> mutate(recall = Freq / sum(Freq)) |> 
+    ungroup() |> filter(Prediction == Truth) |> 
+    select(class = Prediction, precision, recall)
+}  
 ```
 
 ```{r include=FALSE}
@@ -46,6 +66,128 @@ YBT <- get_artist_audio_features('4JGRL8a7h6Cv7hNqbkyloW')
 ```
 
 
+### Random Forest
+
+```{r echo=FALSE}
+playlist2 <- get_playlist_audio_features(playlist_uris = c("6fOKSrN7vzwrMIeYFtvvhh"))
+```
+
+```{r echo=FALSE}
+indie <-
+  bind_rows(
+    playlist |> mutate(playlist = "Industrial hip-hop") |> slice_head(n = 20),
+    playlist2 |> mutate(playlist = "Industrial hip-hop2") |> slice_head(n = 20)
+    ) |>
+    add_audio_analysis()
+```
+
+```{r echo=FALSE}
+indie_features <-
+  indie |>  # For your portfolio, change this to the name of your corpus.
+  mutate(
+    playlist = factor(playlist),
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(
+        segments,
+        compmus_summarise, pitches,
+        method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean",
+      )
+  ) |>
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
+  mutate_at(vars(pitches, timbre), map, bind_rows) |>
+  unnest(cols = c(pitches, timbre))
+```
+
+```{r echo=FALSE}
+indie_recipe <-
+  recipe(
+    playlist ~
+      danceability +
+      energy +
+      loudness +
+      speechiness +
+      acousticness +
+      instrumentalness +
+      liveness +
+      valence +
+      tempo +
+      duration +
+      C + `C#|Db` + D + `D#|Eb` +
+      E + `F` + `F#|Gb` + G +
+      `G#|Ab` + A + `A#|Bb` + B +
+      c01 + c02 + c03 + c04 + c05 + c06 +
+      c07 + c08 + c09 + c10 + c11 + c12,
+    data = indie_features           # Use the same name as the previous block.
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors())      # Converts to z-scores.
+  # step_range(all_predictors())    # Sets range to [0, 1].
+```
+
+
+```{r echo=FALSE}
+indie_cv <- indie_features |> vfold_cv(5)
+```
+
+```{r echo=FALSE}
+forest_model <-
+  rand_forest() |>
+  set_mode("classification") |> 
+  set_engine("ranger", importance = "impurity")
+indie_forest <- 
+  workflow() |> 
+  add_recipe(indie_recipe) |> 
+  add_model(forest_model) |> 
+  fit_resamples(
+    indie_cv, 
+    control = control_resamples(save_pred = TRUE)
+  )
+```
+
+```{r echo=FALSE}
+r1 <- workflow() |> 
+  add_recipe(indie_recipe) |> 
+  add_model(forest_model) |> 
+  fit(indie_features) |> 
+  pluck("fit", "fit", "fit") |>
+  ranger::importance() |> 
+  enframe() |> 
+  mutate(name = fct_reorder(name, value)) |> 
+  ggplot(aes(name, value)) + 
+  geom_col() + 
+  coord_flip() +
+  theme_minimal() +
+  labs(x = NULL, y = "Importance")
+```
+
+```{r echo=FALSE}
+r2 <- indie_features |>
+  ggplot(aes(x = speechiness, y = c08, size = energy)) +
+  geom_point(alpha = 0.8) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Speechiness",
+    y = "Timbre component 8",
+    size = "Energy"
+  )
+```
+
+
+```{r echo=FALSE}
+plot_grid(r1,r2, nrow=1,rel_widths = c(1, 2))
+```
+
+
+------------------------------------------------------------------------
+
+Using a random forest model, I decided to measure the importance of each feature in an industrial hip-hop track. The results showed that energy and speechiness ranked among the most important features, along with timbre component 8 and the G key. One would expect energy and speechiness to be important features in any hip-hop track, though the G keys' importance along with component 8 are quite interesting. Upon plotting these features, there seemed to be a slight correlation between component 8 and speechiness, with a high level of speechiness resulting in a higher level of component 8.
 
 
 ### Introduction
@@ -481,6 +623,9 @@ plot_grid(tempo1, tempo2, nrow=2)
 ------------------------------------------------------------------------
 
 This page shows the tempograms for the song "Have a sad ### BB" by Death grips.`I believe this song would be interesting to analyze seeing as it use some rather bizarre mixing and sampling throughout the entire track, and to see whether Spotify could then pick up on the tempo. The measured tempo in the top visualization at first glance looks incredibly messy, though a keen eye might see that there does seem to be a couple of vague lines at around 300BPM and 600BPM. The perceived tempo in the bottom plot also look chaotic, however there is a much clearer tempo visible in the plot. The perceived tempo seems to be somewhere between 143-155BPM, though this seems to fluctuate a bit in Spotify's analysis.
+
+
+
 
 ### Conclusion/discussion
 
