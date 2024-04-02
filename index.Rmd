@@ -66,143 +66,18 @@ YBT <- get_artist_audio_features('4JGRL8a7h6Cv7hNqbkyloW')
 ```
 
 
-### Random Forest
-
-```{r echo=FALSE}
-playlist2 <- get_playlist_audio_features(playlist_uris = c("6fOKSrN7vzwrMIeYFtvvhh"))
-```
-
-```{r echo=FALSE}
-indie <-
-  bind_rows(
-    playlist |> mutate(playlist = "Industrial hip-hop") |> slice_head(n = 20),
-    playlist2 |> mutate(playlist = "Industrial hip-hop2") |> slice_head(n = 20)
-    ) |>
-    add_audio_analysis()
-```
-
-```{r echo=FALSE}
-indie_features <-
-  indie |>  # For your portfolio, change this to the name of your corpus.
-  mutate(
-    playlist = factor(playlist),
-    segments = map2(segments, key, compmus_c_transpose),
-    pitches =
-      map(
-        segments,
-        compmus_summarise, pitches,
-        method = "mean", norm = "manhattan"
-      ),
-    timbre =
-      map(
-        segments,
-        compmus_summarise, timbre,
-        method = "mean",
-      )
-  ) |>
-  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
-  mutate_at(vars(pitches, timbre), map, bind_rows) |>
-  unnest(cols = c(pitches, timbre))
-```
-
-```{r echo=FALSE}
-indie_recipe <-
-  recipe(
-    playlist ~
-      danceability +
-      energy +
-      loudness +
-      speechiness +
-      acousticness +
-      instrumentalness +
-      liveness +
-      valence +
-      tempo +
-      duration +
-      C + `C#|Db` + D + `D#|Eb` +
-      E + `F` + `F#|Gb` + G +
-      `G#|Ab` + A + `A#|Bb` + B +
-      c01 + c02 + c03 + c04 + c05 + c06 +
-      c07 + c08 + c09 + c10 + c11 + c12,
-    data = indie_features           # Use the same name as the previous block.
-  ) |>
-  step_center(all_predictors()) |>
-  step_scale(all_predictors())      # Converts to z-scores.
-  # step_range(all_predictors())    # Sets range to [0, 1].
-```
-
-
-```{r echo=FALSE}
-indie_cv <- indie_features |> vfold_cv(5)
-```
-
-```{r echo=FALSE}
-forest_model <-
-  rand_forest() |>
-  set_mode("classification") |> 
-  set_engine("ranger", importance = "impurity")
-indie_forest <- 
-  workflow() |> 
-  add_recipe(indie_recipe) |> 
-  add_model(forest_model) |> 
-  fit_resamples(
-    indie_cv, 
-    control = control_resamples(save_pred = TRUE)
-  )
-```
-
-```{r echo=FALSE}
-r1 <- workflow() |> 
-  add_recipe(indie_recipe) |> 
-  add_model(forest_model) |> 
-  fit(indie_features) |> 
-  pluck("fit", "fit", "fit") |>
-  ranger::importance() |> 
-  enframe() |> 
-  mutate(name = fct_reorder(name, value)) |> 
-  ggplot(aes(name, value)) + 
-  geom_col() + 
-  coord_flip() +
-  theme_minimal() +
-  labs(x = NULL, y = "Importance")
-```
-
-```{r echo=FALSE}
-r2 <- indie_features |>
-  ggplot(aes(x = speechiness, y = c08, size = energy)) +
-  geom_point(alpha = 0.8) +
-  scale_color_viridis_d() +
-  labs(
-    x = "Speechiness",
-    y = "Timbre component 8",
-    size = "Energy"
-  )
-```
-
-
-```{r echo=FALSE}
-plot_grid(r1,r2, nrow=1,rel_widths = c(1, 2))
-```
-
-
-------------------------------------------------------------------------
-
-Using a random forest model, I decided to measure the importance of each feature in an industrial hip-hop track. The results showed that energy and speechiness ranked among the most important features, along with timbre component 8 and the G key. One would expect energy and speechiness to be important features in any hip-hop track, though the G keys' importance along with component 8 are quite interesting. Upon plotting these features, there seemed to be a slight correlation between component 8 and speechiness, with a high level of speechiness resulting in a higher level of component 8.
-
 
 ### Introduction
 
-This portfolio aims to analyze a specific branch of hip-hop, namely industrial hip-hop. Industrial hip-hop, in my opinion, is one of the most interesting and bizarre genres in rap music. Being a fusion of industrial music and hip-hop, the genre showcases artists blending harsh, mechanical, transgressive or provocative sounds accompanied with rap and rhythm. Due to being a niche genre, one which many people may not be familiar with, I believe it would be a very interesting topic to explore in this online portfolio. The aim of the portfolio is to research how industrial hip-hop formed as a unique branch in hip-hop and, more specifically, to analyze songs in the genre from the 80’s to the current day to see what elements they have in common, and in which way these songs differ and have evolved. Elements such as loudness, lyrics, timbre, and bpm would be interesting to explore over time as I believe there are visible changes in these areas throughout the years, such as loudness and bpm increasing. The portfolio would possibly also include comparing industrial hip-hop to other branches of rap music in order to better understand what elements in a song make it uniquely industrial and set it apart from its counterparts.
+This portfolio aims to analyze a specific branch of Hip-Hop, namely industrial hip-hop. Industrial Hip-Hop, in my opinion, is one of the most interesting and bizarre genres in rap music. Being a fusion of Industrial music and Hip-Hop, the genre showcases artists blending harsh, mechanical, transgressive or provocative sounds accompanied with rap and rhythm. Due to it being a niche genre, one which many people may not be familiar with, I believe it would be a very interesting topic to explore in this online portfolio. The goal of this portfolio is to research how Spotify interprets and understands Industrial Hip-Hop by analyzing features and songs in the genre to see how this branch differs from other Hip-Hop genres.
 
-Artists I wish to analyze for this portfolio include the following:
+My corpus consists of the public playlist titled Noise/Industrial hip-hop, which contains 36 songs of the genre. Along with the playlist I also included a few distinct tracks from artists such as Jpegmafia, Clipping and Death Grips, as they are likely among the most well-known artists in the Industrial Hip-Hop genre.
 
-2000’s-present: Jpegmafia, Clipping, Death Grips. These are all artists I personally listen to and all bring their own unique sound to the industrial hip-hop genre.
+------------------------------------------------------------------------
 
-1990’s: Young Black Tennagers, Scorn. These I believe can show more about the forming of more experimentation with industrial noise in rap music.
+<iframe src="https://open.spotify.com/embed/playlist/558qxWvGDmCG2y2w3OZpcG?si=0558c62e937d4c6b?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
 
-1980’s: Mark Stewart, Bill Laswell, and Adrian Sherwood. These artists appear to have set the roots for industrial hip-hop, and so analyzing these songs I believe will reveal more about the forming of the genre itself.
-
-### First visualization
+### How energetic and loud is industrial hip-hop?
 
 ```{r first_plot, echo=FALSE}
 present_data = rbind(Clipping, Jpegmafia, Death_Grips)
@@ -219,7 +94,7 @@ ggplotly(p1)
 
 This visualization shows the relations between loudness and energy in Industrial music. The tracks were taken from a industrial hip-hop playlist. Size is determined by the track's popularity while color is determined by the track's valence. This plot shows a clear correlation between loudness and energy among these artist, namely the louder the songs, the more energetic they are. With this we can get a better understanding of what makes a hip-hop song industrial. In terms of valence and popularity there doesn't seem to be an obvious pattern.
 
-### Chromagrams
+### A couple of chromagrams
 
 ```{r echo=FALSE}
 isf <-
@@ -331,7 +206,7 @@ The second plot analyses "Ain't it Funny" by Danny brown, which switches interva
 The third chromagram analyses "Silver Rain Fell" by Scorn, an artist from the 90's which has had an influence on the development of Industrial music and possibly Industrial Hip-Hop. This track mainly switches between G/Gb and E/Eb, along with C#. The lines represent changes in the main verse, which seem to be very minor. 
 
 
-### Self-similarity Matrix
+### What is the structure of 'I've seen footage?'
 
 
 ```{r ssm, echo=FALSE}
@@ -384,7 +259,7 @@ bind_rows(
 
 This shows the self-similarity matrices of the song "I've Seen Footage" by Death Grips. This song is structurally quite interesting since we don't really see the typical chorus-verse structure throughout the entire song. The song builds upon the chorus-verse structure with 3 brief sections at the start, visualised by the three small squares up until around the 30s mark. From there song takes a more familiar form up until around 120s when it calls back to a section from the intro. Afterwards we get a longer than usual verse followed by a bridge into the chorus.
 
-### Key and Chord estimations
+### Taking a look at keys and chords?
 
 
 ```{r keychord, echo=FALSE}
@@ -585,7 +460,7 @@ in this case, simply because they consist of more notes.
 Clipping's keys seem to be in C# mainly, but the mode is rather ambiguous. Its chord progression seems to chiefly consist of the I, II and VI chords, 
 I think that I -> II -> VI progression is most likely.
 
-### Tempograms
+### Struggling to find the beat
 
 ```{r echo=FALSE}
 #Hazard duty pay: 5dLz8bhINeCWgppiUIcafp
@@ -625,6 +500,128 @@ plot_grid(tempo1, tempo2, nrow=2)
 This page shows the tempograms for the song "Have a sad ### BB" by Death grips.`I believe this song would be interesting to analyze seeing as it use some rather bizarre mixing and sampling throughout the entire track, and to see whether Spotify could then pick up on the tempo. The measured tempo in the top visualization at first glance looks incredibly messy, though a keen eye might see that there does seem to be a couple of vague lines at around 300BPM and 600BPM. The perceived tempo in the bottom plot also look chaotic, however there is a much clearer tempo visible in the plot. The perceived tempo seems to be somewhere between 143-155BPM, though this seems to fluctuate a bit in Spotify's analysis.
 
 
+### Analyzing feature importance using Random Forest
+
+```{r echo=FALSE}
+playlist2 <- get_playlist_audio_features(playlist_uris = c("6fOKSrN7vzwrMIeYFtvvhh"))
+```
+
+```{r echo=FALSE}
+indie <-
+  bind_rows(
+    playlist |> mutate(playlist = "Industrial hip-hop") |> slice_head(n = 20),
+    playlist2 |> mutate(playlist = "Industrial hip-hop2") |> slice_head(n = 20)
+    ) |>
+    add_audio_analysis()
+```
+
+```{r echo=FALSE}
+indie_features <-
+  indie |>  # For your portfolio, change this to the name of your corpus.
+  mutate(
+    playlist = factor(playlist),
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(
+        segments,
+        compmus_summarise, pitches,
+        method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean",
+      )
+  ) |>
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
+  mutate_at(vars(pitches, timbre), map, bind_rows) |>
+  unnest(cols = c(pitches, timbre))
+```
+
+```{r echo=FALSE}
+indie_recipe <-
+  recipe(
+    playlist ~
+      danceability +
+      energy +
+      loudness +
+      speechiness +
+      acousticness +
+      instrumentalness +
+      liveness +
+      valence +
+      tempo +
+      duration +
+      C + `C#|Db` + D + `D#|Eb` +
+      E + `F` + `F#|Gb` + G +
+      `G#|Ab` + A + `A#|Bb` + B +
+      c01 + c02 + c03 + c04 + c05 + c06 +
+      c07 + c08 + c09 + c10 + c11 + c12,
+    data = indie_features           # Use the same name as the previous block.
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors())      # Converts to z-scores.
+  # step_range(all_predictors())    # Sets range to [0, 1].
+```
+
+
+```{r echo=FALSE}
+indie_cv <- indie_features |> vfold_cv(5)
+```
+
+```{r echo=FALSE}
+forest_model <-
+  rand_forest() |>
+  set_mode("classification") |> 
+  set_engine("ranger", importance = "impurity")
+indie_forest <- 
+  workflow() |> 
+  add_recipe(indie_recipe) |> 
+  add_model(forest_model) |> 
+  fit_resamples(
+    indie_cv, 
+    control = control_resamples(save_pred = TRUE)
+  )
+```
+
+```{r echo=FALSE}
+r1 <- workflow() |> 
+  add_recipe(indie_recipe) |> 
+  add_model(forest_model) |> 
+  fit(indie_features) |> 
+  pluck("fit", "fit", "fit") |>
+  ranger::importance() |> 
+  enframe() |> 
+  mutate(name = fct_reorder(name, value)) |> 
+  ggplot(aes(name, value)) + 
+  geom_col() + 
+  coord_flip() +
+  theme_minimal() +
+  labs(x = NULL, y = "Importance")
+```
+
+```{r echo=FALSE}
+r2 <- indie_features |>
+  ggplot(aes(x = speechiness, y = c08, size = energy)) +
+  geom_point(alpha = 0.8) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Speechiness",
+    y = "Timbre component 8",
+    size = "Energy"
+  )
+```
+
+
+```{r echo=FALSE}
+plot_grid(r1,r2, nrow=1,rel_widths = c(1, 2))
+```
+
+
+------------------------------------------------------------------------
+
+Using a random forest model, I decided to measure the importance of each feature in an industrial hip-hop track. The results showed that energy and speechiness ranked among the most important features, along with timbre component 8 and the G key. One would expect energy and speechiness to be important features in any hip-hop track, though the G keys' importance along with component 8 are quite interesting. Upon plotting these features, there seemed to be a slight correlation between component 8 and speechiness, with a high level of speechiness resulting in a higher level of component 8.
 
 
 ### Conclusion/discussion
